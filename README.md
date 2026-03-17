@@ -348,10 +348,6 @@ tfjs.converters.save_keras_model(
 - **Prettier** for code formatting
 - **Conventional Commits** for commit messages
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🙏 Acknowledgments
 
 - **Kaggle** for the Chest X-ray Pneumonia dataset
@@ -368,6 +364,4 @@ For support or questions:
 
 ---
 
-**Built with ❤️ for healthcare professionals and patients worldwide**
 
-*"Early detection saves lives - AI can help make it faster and more accessible"*
