@@ -46,8 +46,8 @@ export class ImageValidator {
       // Determine if it's a medical X-ray
       const medicalScore = this.calculateMedicalScore(characteristics);
       
-      // Make decision based on score - lower threshold for acceptance
-      const isMedical = medicalScore > 0.4; // Lowered from 0.6
+      // Make decision based on score - require higher score for medical images
+      const isMedical = medicalScore > 0.6; // Raised back to properly filter photos
       const confidence = isMedical ? medicalScore : 1 - medicalScore;
 
       if (!isMedical) {
@@ -183,44 +183,53 @@ export class ImageValidator {
     edgeDensity: number;
     aspectRatio: number;
   }): number {
-    let score = 0.5; // Start with neutral score
+    let score = 0.3; // Start with low score (favor rejection)
 
-    // X-rays are typically grayscale - but be more flexible
-    if (characteristics.grayscaleRatio > 0.7) {
-      score += 0.2;
+    // X-rays are typically grayscale - be strict about this
+    if (characteristics.grayscaleRatio > 0.8) {
+      score += 0.25;
+    } else if (characteristics.grayscaleRatio > 0.6) {
+      score += 0.1;
     } else if (characteristics.grayscaleRatio < 0.4) {
-      score -= 0.2; // Reduce penalty for some color
+      score -= 0.3; // Heavy penalty for color photos
     }
 
-    // X-rays have specific brightness range - be more flexible
-    if (characteristics.brightness > 0.15 && characteristics.brightness < 0.8) {
-      score += 0.15;
-    } else if (characteristics.brightness > 0.9) {
-      score -= 0.2; // Only very bright images are probably photos
+    // X-rays have specific brightness range
+    if (characteristics.brightness > 0.2 && characteristics.brightness < 0.7) {
+      score += 0.2;
+    } else if (characteristics.brightness > 0.85) {
+      score -= 0.25; // Bright photos are not X-rays
     }
 
-    // X-rays usually have good contrast - be more flexible
-    if (characteristics.contrast > 0.2) {
-      score += 0.15;
-    } else if (characteristics.contrast < 0.05) {
-      score -= 0.15;
+    // X-rays usually have good contrast
+    if (characteristics.contrast > 0.25) {
+      score += 0.2;
+    } else if (characteristics.contrast < 0.1) {
+      score -= 0.2;
     }
 
     // Dark areas are common in X-rays
-    if (characteristics.darkPixelRatio > 0.05) {
-      score += 0.1;
+    if (characteristics.darkPixelRatio > 0.08) {
+      score += 0.15;
     }
 
-    // Edge density patterns - more flexible range
-    if (characteristics.edgeDensity > 0.05 && characteristics.edgeDensity < 0.6) {
+    // Edge density patterns
+    if (characteristics.edgeDensity > 0.08 && characteristics.edgeDensity < 0.4) {
       score += 0.1;
     }
 
     // Additional check for medical imaging patterns
-    // Medical images often have specific texture patterns
     const hasMedicalTexture = this.detectMedicalTexture(characteristics);
     if (hasMedicalTexture) {
       score += 0.2;
+    } else {
+      score -= 0.1; // Penalty if no medical texture detected
+    }
+
+    // Quick rejection for obvious photos
+    if (characteristics.brightness > 0.6 && characteristics.contrast > 0.15 && 
+        characteristics.grayscaleRatio < 0.7) {
+      score -= 0.3; // Likely a regular photo
     }
 
     return Math.max(0, Math.min(1, score));
