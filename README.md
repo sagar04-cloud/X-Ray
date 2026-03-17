@@ -368,6 +368,4 @@ For support or questions:
 
 ---
 
-**Built with ❤️ for healthcare professionals and patients worldwide**
 
-*"Early detection saves lives - AI can help make it faster and more accessible"*
