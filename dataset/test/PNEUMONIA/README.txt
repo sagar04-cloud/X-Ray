@@ -1,0 +1,1 @@
+Place PNEUMONIA test images here

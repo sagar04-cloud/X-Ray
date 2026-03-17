@@ -1,0 +1,112 @@
+{
+  "format": "layers-model",
+  "generatedBy": "TensorFlow.js Converter",
+  "convertedBy": "TensorFlow.js Converter v4.17.0",
+  "modelTopology": {
+    "keras_version": "2.13.1",
+    "backend": "tensorflow",
+    "model_config": {
+      "class_name": "Functional",
+      "config": {
+        "name": "model",
+        "trainable": true,
+        "inputs": [
+          {
+            "class_name": "InputLayer",
+            "config": {
+              "batch_input_shape": [null, 224, 224, 3],
+              "dtype": "float32",
+              "sparse": false,
+              "ragged": false,
+              "name": "input_1"
+            },
+            "inbound_nodes": []
+          }
+        ],
+        "outputs": [
+          {
+            "name": "dense",
+            "inbound_nodes": [
+              [
+                "global_average_pooling2d",
+                0,
+                0,
+                {}
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "training_config": {
+      "loss": "categorical_crossentropy",
+      "metrics": [
+        "accuracy"
+      ],
+      "weighted_metrics": null,
+      "sample_weight_mode": null,
+      "loss_weights": null,
+      "optimizer_config": {
+        "class_name": "Adam",
+        "config": {
+          "name": "Adam",
+          "learning_rate": 0.0010000000474974513,
+          "decay": 0.0,
+          "beta_1": 0.9,
+          "beta_2": 0.999,
+          "epsilon": 1e-07,
+          "amsgrad": false
+        }
+      }
+    }
+  },
+  "weightsManifest": [
+    {
+      "paths": [
+        "weights.bin"
+      ],
+      "weights": [
+        {
+          "name": "conv2d/kernel",
+          "shape": [3, 3, 3, 32],
+          "dtype": "float32"
+        },
+        {
+          "name": "conv2d/bias",
+          "shape": [32],
+          "dtype": "float32"
+        },
+        {
+          "name": "conv2d_1/kernel",
+          "shape": [3, 3, 32, 64],
+          "dtype": "float32"
+        },
+        {
+          "name": "conv2d_1/bias",
+          "shape": [64],
+          "dtype": "float32"
+        },
+        {
+          "name": "conv2d_2/kernel",
+          "shape": [3, 3, 64, 128],
+          "dtype": "float32"
+        },
+        {
+          "name": "conv2d_2/bias",
+          "shape": [128],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense/kernel",
+          "shape": [128, 2],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense/bias",
+          "shape": [2],
+          "dtype": "float32"
+        }
+      ]
+    }
+  ]
+}
