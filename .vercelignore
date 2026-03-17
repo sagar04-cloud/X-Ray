@@ -1,0 +1,25 @@
+# Python files - only needed for local training, not deployment
+*.py
+requirements.txt
+.python-version
+
+# Training data and models (too large for deployment)
+dataset/
+public/model/*.bin
+*.h5
+*.pkl
+
+# Local development files
+node_modules/
+.env
+.env.local
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed for deployment)
+*.md
+DATASET_GUIDE.md
+README.md
