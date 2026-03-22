@@ -47,7 +47,7 @@ export class ImageValidator {
       const medicalScore = this.calculateMedicalScore(characteristics);
       
       // Make decision based on score - require higher score for medical images
-      const isMedical = medicalScore > 0.6; // Raised back to properly filter photos
+      const isMedical = medicalScore > 0.65; // Stricter threshold for medical images
       const confidence = isMedical ? medicalScore : 1 - medicalScore;
 
       if (!isMedical) {
@@ -186,34 +186,36 @@ export class ImageValidator {
     let score = 0.3; // Start with low score (favor rejection)
 
     // X-rays are typically grayscale - be strict about this
-    if (characteristics.grayscaleRatio > 0.8) {
-      score += 0.25;
-    } else if (characteristics.grayscaleRatio > 0.6) {
-      score += 0.1;
-    } else if (characteristics.grayscaleRatio < 0.4) {
+    if (characteristics.grayscaleRatio > 0.85) {
+      score += 0.3;
+    } else if (characteristics.grayscaleRatio > 0.7) {
+      score += 0.15;
+    } else if (characteristics.grayscaleRatio < 0.5) {
       score -= 0.3; // Heavy penalty for color photos
     }
 
-    // X-rays have specific brightness range
+    // X-rays have specific brightness range - be strict
     if (characteristics.brightness > 0.2 && characteristics.brightness < 0.7) {
       score += 0.2;
-    } else if (characteristics.brightness > 0.85) {
+    } else if (characteristics.brightness > 0.8) {
       score -= 0.25; // Bright photos are not X-rays
+    } else if (characteristics.brightness < 0.1) {
+      score -= 0.2; // Too dark
     }
 
     // X-rays usually have good contrast
     if (characteristics.contrast > 0.25) {
-      score += 0.2;
-    } else if (characteristics.contrast < 0.1) {
-      score -= 0.2;
-    }
-
-    // Dark areas are common in X-rays
-    if (characteristics.darkPixelRatio > 0.08) {
       score += 0.15;
+    } else if (characteristics.contrast < 0.15) {
+      score -= 0.15;
     }
 
-    // Edge density patterns
+    // Dark areas are common in X-rays (bones, organs)
+    if (characteristics.darkPixelRatio > 0.08) {
+      score += 0.1;
+    }
+
+    // Edge density patterns typical of medical imaging
     if (characteristics.edgeDensity > 0.08 && characteristics.edgeDensity < 0.4) {
       score += 0.1;
     }
@@ -221,15 +223,20 @@ export class ImageValidator {
     // Additional check for medical imaging patterns
     const hasMedicalTexture = this.detectMedicalTexture(characteristics);
     if (hasMedicalTexture) {
-      score += 0.2;
+      score += 0.15;
     } else {
       score -= 0.1; // Penalty if no medical texture detected
     }
 
-    // Quick rejection for obvious photos
+    // Strict rejection of obvious photos
     if (characteristics.brightness > 0.6 && characteristics.contrast > 0.15 && 
         characteristics.grayscaleRatio < 0.7) {
       score -= 0.3; // Likely a regular photo
+    }
+
+    // Additional penalty for very bright, colorful images
+    if (characteristics.brightness > 0.7 && characteristics.grayscaleRatio < 0.6) {
+      score -= 0.2;
     }
 
     return Math.max(0, Math.min(1, score));
@@ -279,28 +286,33 @@ export class ImageValidator {
     edgeDensity: number;
     aspectRatio: number;
   }): string {
-    // Only reject very obvious non-medical images
-    if (characteristics.grayscaleRatio < 0.3) {
-      return 'This appears to be a color photograph. Please upload a medical chest X-ray image (typically black and white).';
+    // Strict rejection for color photos
+    if (characteristics.grayscaleRatio < 0.5) {
+      return 'This appears to be a color photograph. Only medical chest X-ray images (black and white) are accepted for analysis.';
     }
 
-    // Only reject extremely bright images
-    if (characteristics.brightness > 0.95) {
-      return 'This image appears too bright for a medical X-ray. Please ensure you are uploading a proper chest X-ray image.';
+    // Reject bright images typical of photos
+    if (characteristics.brightness > 0.8) {
+      return 'This image appears too bright for a medical X-ray. Please upload a proper chest X-ray image with appropriate medical imaging contrast.';
     }
 
-    // Only reject extremely dark or poor quality images
-    if (characteristics.brightness < 0.05) {
-      return 'This image is too dark or of poor quality. Please provide a clear chest X-ray image.';
+    // Reject very dark images
+    if (characteristics.brightness < 0.1) {
+      return 'This image is too dark or of poor quality. Please provide a clear, properly exposed chest X-ray image.';
     }
 
-    // Only reject extremely low contrast
-    if (characteristics.contrast < 0.02) {
-      return 'This image has very low contrast. Please upload a high-quality chest X-ray.';
+    // Reject low contrast images
+    if (characteristics.contrast < 0.15) {
+      return 'This image has insufficient contrast for medical analysis. Please upload a high-quality chest X-ray with clear anatomical details.';
     }
 
-    // Default message - be more encouraging
-    return 'This image may not be a clear chest X-ray. For best results, please upload a standard medical chest X-ray image.';
+    // Reject images that look like regular photos
+    if (characteristics.brightness > 0.6 && characteristics.grayscaleRatio < 0.7) {
+      return 'This does not appear to be a medical X-ray image. Please upload only chest X-ray images taken in a medical setting.';
+    }
+
+    // Default strict message
+    return 'Invalid image: This does not meet the criteria for a medical chest X-ray. Please ensure you are uploading a proper medical X-ray image.';
   }
 }
 
