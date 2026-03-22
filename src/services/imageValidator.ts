@@ -46,8 +46,8 @@ export class ImageValidator {
       // Determine if it's a medical X-ray
       const medicalScore = this.calculateMedicalScore(characteristics);
       
-      // Make decision based on score - require higher score for medical images
-      const isMedical = medicalScore > 0.65; // Stricter threshold for medical images
+      // Make decision based on score - very strict threshold for medical images only
+      const isMedical = medicalScore > 0.75; // Very strict threshold - only clear X-rays pass
       const confidence = isMedical ? medicalScore : 1 - medicalScore;
 
       if (!isMedical) {
@@ -183,60 +183,65 @@ export class ImageValidator {
     edgeDensity: number;
     aspectRatio: number;
   }): number {
-    let score = 0.3; // Start with low score (favor rejection)
+    let score = 0.2; // Start with very low score (extremely strict)
 
-    // X-rays are typically grayscale - be strict about this
-    if (characteristics.grayscaleRatio > 0.85) {
-      score += 0.3;
-    } else if (characteristics.grayscaleRatio > 0.7) {
-      score += 0.15;
-    } else if (characteristics.grayscaleRatio < 0.5) {
-      score -= 0.3; // Heavy penalty for color photos
-    }
-
-    // X-rays have specific brightness range - be strict
-    if (characteristics.brightness > 0.2 && characteristics.brightness < 0.7) {
+    // X-rays must be predominantly grayscale - be extremely strict
+    if (characteristics.grayscaleRatio > 0.9) {
+      score += 0.4;
+    } else if (characteristics.grayscaleRatio > 0.8) {
       score += 0.2;
-    } else if (characteristics.brightness > 0.8) {
-      score -= 0.25; // Bright photos are not X-rays
-    } else if (characteristics.brightness < 0.1) {
-      score -= 0.2; // Too dark
+    } else if (characteristics.grayscaleRatio < 0.7) {
+      score -= 0.4; // Very heavy penalty for any color content
     }
 
-    // X-rays usually have good contrast
-    if (characteristics.contrast > 0.25) {
-      score += 0.15;
+    // X-rays have very specific brightness range - extremely strict
+    if (characteristics.brightness > 0.25 && characteristics.brightness < 0.6) {
+      score += 0.25;
+    } else if (characteristics.brightness > 0.7 || characteristics.brightness < 0.15) {
+      score -= 0.3; // Heavy penalty for photo-like brightness
+    }
+
+    // X-rays must have good contrast - very strict
+    if (characteristics.contrast > 0.2 && characteristics.contrast < 0.5) {
+      score += 0.2;
     } else if (characteristics.contrast < 0.15) {
+      score -= 0.2;
+    }
+
+    // Dark areas are essential in X-rays - strict requirement
+    if (characteristics.darkPixelRatio > 0.1) {
+      score += 0.1;
+    } else if (characteristics.darkPixelRatio < 0.05) {
       score -= 0.15;
     }
 
-    // Dark areas are common in X-rays (bones, organs)
-    if (characteristics.darkPixelRatio > 0.08) {
+    // Edge density must be in medical imaging range - strict
+    if (characteristics.edgeDensity > 0.1 && characteristics.edgeDensity < 0.35) {
       score += 0.1;
     }
 
-    // Edge density patterns typical of medical imaging
-    if (characteristics.edgeDensity > 0.08 && characteristics.edgeDensity < 0.4) {
-      score += 0.1;
-    }
-
-    // Additional check for medical imaging patterns
+    // Medical texture detection - mandatory
     const hasMedicalTexture = this.detectMedicalTexture(characteristics);
     if (hasMedicalTexture) {
       score += 0.15;
     } else {
-      score -= 0.1; // Penalty if no medical texture detected
+      score -= 0.2; // Heavy penalty for no medical texture
     }
 
-    // Strict rejection of obvious photos
-    if (characteristics.brightness > 0.6 && characteristics.contrast > 0.15 && 
-        characteristics.grayscaleRatio < 0.7) {
-      score -= 0.3; // Likely a regular photo
+    // Immediate rejection for obvious photos
+    if (characteristics.brightness > 0.5 && characteristics.contrast > 0.1 && 
+        characteristics.grayscaleRatio < 0.8) {
+      score -= 0.4; // Almost certain photo
     }
 
-    // Additional penalty for very bright, colorful images
-    if (characteristics.brightness > 0.7 && characteristics.grayscaleRatio < 0.6) {
-      score -= 0.2;
+    // Additional strict penalties
+    if (characteristics.brightness > 0.6 && characteristics.grayscaleRatio < 0.7) {
+      score -= 0.3; // Bright colorful image
+    }
+
+    // Must meet minimum requirements to even be considered
+    if (characteristics.grayscaleRatio < 0.75 || characteristics.brightness > 0.7) {
+      score = Math.min(score, 0.1); // Force very low score
     }
 
     return Math.max(0, Math.min(1, score));
